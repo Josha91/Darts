@@ -14,7 +14,9 @@ To do list:
 8/ Change starting player in new legs. 
 10/ Save functionality. To save to a file pertaining to a specific player. 
 11/ On the bottom subframe, make tabs.  To switch between graphs, and match statistics. 
-
+12/ Suggest a double to throw
+13/ 9-darter celebratory screen
+14/ Ask the player in a popup if he had a double finish, instead of a checkbox. 
 """
 
 
@@ -78,14 +80,15 @@ from drawboard import drawBoard
 from play_game import *
 
 LARGE_FONT = ("Verdana",12)
+BOLD_FONT = ("Verdana",14,"bold")
 style.use("ggplot")
 
 class controller(Tk):
 	def __init__(self):
 		Tk.__init__(self)
-		self.geometry('900x600')
+		self.geometry('820x580')
 		self.maxsize(900,600)
-		self.config(bg='skyblue')
+		self.config(bg='salmon')#'skyblue')
 
 		frame1 = menu(self)
 		frame1.grid(row=0,column=0,sticky='nsew',pady=50,padx=10)
@@ -112,19 +115,19 @@ class menu(Frame):
 	def __init__(self,root):
 		self.root = root
 		Frame.__init__(self,root,bg='grey',width=300,height=400)
-		label = Label(self,text='Main menu',font=LARGE_FONT)
+		label = Label(self,text='Main menu',font=BOLD_FONT,bg='grey')#LARGE_FONT)
 		label.pack()#grid(row=0,column=0,pady=50,padx=10)
 
-		button = Button(self, text = 'Head-to-head',command =root.new_game )
+		button = Button(self, text = 'Head-to-head',command =root.new_game ,highlightbackground='grey')
 		button.pack()
 
-		button = Button(self, text = 'Simple game',command = root.new_game)#self.heatmap)
+		button = Button(self, text = 'Simple game',command = root.new_game,highlightbackground='grey')#self.heatmap)
 		button.pack()
 
-		button = Button(self, text = 'Heatmap',command = root.new_game)#self.heatmap)
+		button = Button(self, text = 'Heatmap',command = root.new_game,highlightbackground='grey')#self.heatmap)
 		button.pack()
 
-		button = Button(self, text = 'Quit',command = self._quit )
+		button = Button(self, text = 'Quit',command = self._quit,highlightbackground='grey')
 		button.pack()
 
 	def _quit(self):
@@ -140,7 +143,7 @@ class GameHub(Frame):
 
 		self.subframe = Frame(self,width=580,height=250,bg='white')
 		#subframe.grid(row=0,column=1,padx=10,pady=50)
-		self.subframe.place(x=5,y=5,height=195,width=510)
+		self.subframe.place(x=5,y=5,height=195,width=500)
 
 		self.subframe2 = Frame(self,width=580,height=250,bg='white')
 		#subframe.grid(row=0,column=1,padx=10,pady=50)
@@ -148,11 +151,11 @@ class GameHub(Frame):
 
 		self.subframe3 = Frame(self,width=580,height=250,bg='white')
 		#subframe.grid(row=0,column=1,padx=10,pady=50)
-		self.subframe3.place(x=520,y=5,height=195,width=75)
+		self.subframe3.place(x=510,y=5,height=195,width=85)
 		self.new_player()
 
 	def leglist(self):
-		Label(self.subframe3,text='Legs won').grid(row=0,column=0)
+		Label(self.subframe3,text='Legs won',font=BOLD_FONT).grid(row=0,column=0)
 		Label(self.subframe3,text='%s'%self.player1.name).grid(row=2,column=0)
 		self.legtext1 = StringVar()
 		self.legtext1.set('%d/%d'%(self.player1.legs_won,self.gamesize))
@@ -197,12 +200,19 @@ class GameHub(Frame):
 		self.leglist()
 
 	def player_output(self,player,player2,col=1):
-		player.score = 501
 		Label(self.subframe,text='%s'%player.name).grid(row=0,column=col)
-		lab1 = Label(self.subframe,text='%s'%str(player.score))
+		#lab1 = Label(self.subframe,text='%s'%str(player.score))
+		##self.player.current_label = lab1
+		#self.legtext1 = StringVar()
+		#self.legtext1.set('%d/%d'%(self.player1.legs_won,self.gamesize))
+		#legs1 = Label(self.subframe3,textvariable=self.legtext1).grid(row=3,column=0)
+		player.current_label = StringVar()
+		player.current_label.set('%s'%str(player.score))
+		Label(self.subframe,textvariable=player.current_label).grid(row=4,column=col)
+
 		lab2 = Label(self.subframe,text='')
 		lab3 = Label(self.subframe,text='')
-		lab1.grid(row=4,column=col)
+		#lab1.grid(row=4,column=col)
 		lab2.grid(row=3,column=col)
 		lab3.grid(row=2,column=col)
 
@@ -214,10 +224,10 @@ class GameHub(Frame):
 			inp1 = Entry(self.subframe,state='normal')
 			inp1.grid(row=5,column=col)
 			var1 = IntVar()
-			Checkbutton(self.subframe,text='Double finish',variable=var1,bg='purple').grid(row=6,column=col)
+			Checkbutton(self.subframe,text='Double finish',variable=var1,bg='red').grid(row=6,column=col)
 
 			b = Button(self.subframe,text='Go!')
-			b['command'] = lambda arg1=inp1,arg2=[lab1,lab2,lab3],arg3=player,arg4=player2, arg5=var1: \
+			b['command'] = lambda arg1=inp1,arg2=[player.current_label,lab2,lab3],arg3=player,arg4=player2, arg5=var1: \
 												self._update(arg1,arg2,arg3,arg4,arg5)
 			b.grid(row=7,column=col)
 
@@ -231,10 +241,10 @@ class GameHub(Frame):
 			MessageBox.showinfo('Input warning','Are you sure that was a valid number?')
 			return
 		if value <= 180: 
-			if (player.score == 0)&(dbl_finish.get() == 0): 
+			if (player.score == value)&(dbl_finish.get() == 0):
 				value = 0
 			player._get_score(value)
-			labels[0].configure(text=str(player.score))
+			labels[0].set('%s'%str(player.score))
 			labels[1].configure(text=value)
 			labels[2].configure(text='%.1f'%(player.total/player.darts*3))
 			if (player.score == 0)&(dbl_finish.get() == 1):
@@ -242,7 +252,7 @@ class GameHub(Frame):
 				player.legs_won+=1
 				if player.legs_won == self.gamesize:
 					#player wins the game! Victory screen
-
+					MessageBox.showinfo('%s won the game!'%player.name)
 				self.reset()
 				self.leglist()
 			self.refreshFigure()
@@ -266,6 +276,15 @@ class GameHub(Frame):
 		self.player2.reset()
 		self.legtext1.set('%d/%d'%(self.player1.legs_won,self.gamesize))
 		self.legtext2.set('%d/%d'%(self.player2.legs_won,self.gamesize))
+		self.player1.current_label.set('%s'%self.player1.score)
+		self.player2.current_label.set('%s'%self.player2.score)
+
+		if np.sum(self.player1.legs_won+self.player2.legs_won) % 2 == 0:
+			self.player1.activate(self.player2)
+			self.player2.deactivate()
+		else:
+			self.player1.deactivate()
+			self.player2.activate(self.player1)
 
 	def new_player(self):
 		#create a container that can be destroyed once players are selected
@@ -306,7 +325,7 @@ class GameHub(Frame):
 			except:
 				self.gamesize = 3
 			try:
-				sc = int(start_score)
+				sc = int(start_score.get())
 				if sc < 50: 
 					print("That's a very low score... let's start at 201!")
 					sc = 201
