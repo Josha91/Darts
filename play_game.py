@@ -16,20 +16,28 @@ class Player():
 		self.total = 0 #total score - used for average calculation. 
 		self.darts = 0 #number of darts thrown - used for average calculation
 
+		self.current_label = 0
+
 		self.board = boardsize()
 
 		self.dbl_pref = 32 #preferred double. Defaults to 32 because powers of 2
 
+		self.scores = []
+
+		self.startscore = 501
+
 		#function to determine the ideal way to 0 (best doubles?)
 
 	def _get_score(self,value): 
-		if (value > self.score - 1)&(value!=self.score):
+		if (value >= self.score - 1)&(value!=self.score):
 			#too high - keep score
 			self.darts += 3
 		else:
 			self.score -= value 
 			self.total += value
-			self.darts += 3 #Adjust when ended with a double. 
+			self.darts += 3 #Adjust when ended with a double.
+
+			self.scores.append(value) 
 
 	def checkout(self):
 		"""
@@ -37,6 +45,9 @@ class Player():
 		"""
 		if self.score > 170: return -1
 		last = np.append(np.arange(1,21)*2,50)
+
+	def reset(self):
+		self.score = self.startscore
 
 
 class Bot(Player):
@@ -49,7 +60,9 @@ class Bot(Player):
 		self.legs_won = 0 
 		self.legs_played = 0
 
-		self.xc,self.yc = self.board.get_optimal_aim(sigma)
+		self.xc,self.yc = 0,50#self.board.get_optimal_aim(sigma)
+
+		self.scores = []
 
 	def activate(self,player2):
 		"""Take a turn"""
@@ -63,7 +76,16 @@ class Bot(Player):
 
 	def _get_score_old(self):
 		xy = multinorm([self.xc,self.yc],self.sigma)
-		return self.board._score(xy[0],xy[1])
+		value = self.board._score(xy[0],xy[1])
+		if (value > self.score - 1)&(value!=self.score):
+			#too high - keep score
+			self.darts += 3
+		else:
+			self.score -= value 
+			self.total += value
+			self.darts += 3 #Adjust when ended with a double.
+
+			self.scores.append(value) 
 
 class Human(Player):
 	def __init__(self,name):
@@ -74,10 +96,13 @@ class Human(Player):
 		"""
 		Take a turn. For humans: activate their 
 		"""
-		self.inp.configure(state='normal')
+		self.inp[0].configure(state='normal')
+		self.inp[0].delete(0, 'end')
+		self.inp[1].configure(state='normal')
 
 	def deactivate(self):
-		self.inp.configure(state='disabled')
+		self.inp[0].configure(state='disabled')
+		self.inp[1].configure(state='disabled')
 
 	def _get_score_old(self):
 		while True:

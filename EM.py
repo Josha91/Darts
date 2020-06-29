@@ -1,11 +1,17 @@
+import matplotlib
+# This defines the Python GUI backend to use for matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 import numpy as np 
 from numpy.random import multivariate_normal as multinorm
-import matplotlib.pyplot as plt 
 import math
 from drawboard import boardsize, drawBoard
 import IPython
 from astropy.modeling.functional_models import Gaussian2D
 from plot_heatmap import score,plot_heatmap_sigma
+from tkinter import *
 
 class probs(boardsize):
 
@@ -270,9 +276,74 @@ def profs(N=50):
 	plt.show()
 
 #Arianna()
-profs()
+#profs()
 #test_zeroth_order()
 #simulate()
+
+class EMWidget(Frame):
+	def __init__(self,parent):
+		Frame.__init__(self,parent,width=600,height=500,bg='grey')
+		self.parent = parent
+		self.grid(row=0,column=1,padx=10,pady=50)
+
+		inp1 = Entry(self,state='normal',width=5,highlightbackground='grey')
+		inp1.grid(row=0,column=0)
+
+		b = Button(self,text='Ok',highlightbackground='grey')
+		b['command'] = lambda x=inp1: self.score(x)
+		b.grid(row=0,column=1)
+
+		b = Button(self,text='Calculate your skill!',highlightbackground='grey',command=self.calc_skill)
+		b.grid(row=3,column=1)
+
+		b = Button(self,text='To main menu...',highlightbackground='grey',command=self._quit)
+		b.grid(row=4,column=1)
+
+		self.label = StringVar()
+		self.label.set('Number of scores entered: %s'%0)
+		Label(self,textvariable=self.label,bg='grey').grid(row=1,column=1)
+
+		self.scores = []
+
+	def _quit(self):
+		pass
+
+	def score(self,inp):
+		try:
+			self.scores.append(int(inp.get()))
+		except:
+			pass
+		inp.delete(0, 'end')
+		self.label.set('Number of scores entered: %s'%len(self.scores))
+
+	def calc_skill(self):
+		if len(self.scores) < 50:
+			msg = 'You only entered %s scores. For an accurate assessment, I would '%len(self.scores)+\
+				'recommend using at least 50. Proceed anyway?'
+			MsgBox = messagebox.askquestion ('Calculate skill',msg,icon = 'warning')
+			if MsgBox == 'no':
+				messagebox.showinfo('Return','You will now return to the score input')
+				return
+		EM_sigma = EM(self.scores)
+		sigma = np.sqrt(EM_sigma[0][-1])
+		#print('Arianna throws with a $\sigma$ of about %.3f mm'%sigma)
+		#print('This is based on %d throws'%len(x))
+		fig,ax = plt.subplots(1)
+		plot_heatmap_sigma(sigma,ax)
+		#plt.show()
+		subframe = Frame(self,width=580,height=250,bg='white')
+		#subframe.grid(row=0,column=1,padx=10,pady=50)
+		subframe.place(x=5,y=150,height=195,width=500)
+		canvas = FigureCanvasTkAgg(fig, master=subframe)
+		canvas.get_tk_widget().place(x=5,y=5,width=590,height=490) 
+
+	def ExitApplication():
+		msg = 'You only entered '
+		MsgBox = tk.messagebox.askquestion ('Calculate skill','You only entered %s scores. ',icon = 'warning')
+		if MsgBox == 'yes':
+			self.destroy()
+		else:
+			tk.messagebox.showinfo('Return','You will now return to the application screen')
 
 
 

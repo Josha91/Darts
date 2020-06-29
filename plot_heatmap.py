@@ -1,10 +1,20 @@
-import matplotlib.pyplot as plt 
+from __future__ import print_function
+from __future__ import unicode_literals
+
+
+import matplotlib
+# This defines the Python GUI backend to use for matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 import numpy as np 
 import math
 from drawboard import boardsize,drawBoard
 import IPython
 from astropy.modeling.functional_models import Gaussian2D
 from astropy.convolution import convolve_fft as fft
+from tkinter import *
 
 #First: make a score function. This returns the score given an x,y
 #Then: Build matrix for a grid in x,y
@@ -44,8 +54,12 @@ def score_grid(N=201):
     r = np.linspace(-board.c2od,board.c2od,N)
     return np.vectorize(score)(*np.meshgrid(r,r,sparse=True))
 
-def plot_heatmap():
+def plot_heatmap(parent=None):
     #get the scores on the board
+    if parent is not None:
+        frame = Frame(parent,width=600,height=500,bg='grey')
+        frame.grid(row=0,column=1,padx=10,pady=50)
+
     s = score_grid()
 
     board = boardsize()
@@ -55,7 +69,7 @@ def plot_heatmap():
     r = np.linspace(-board.c2od,board.c2od,N)
     x,y = np.meshgrid(r,r)
     fig,ax = plt.subplots(2,2)
-    for j,sigma in enumerate([1,10,20,60]):
+    for j,sigma in enumerate([3,15,30,60]):
       g = Gaussian2D(1,0,0,sigma,sigma)(x,y) #Gaussian throw distribution
 
       Ex = fft(s,g,normalize_kernel=True) #expected 1-dart score
@@ -65,7 +79,7 @@ def plot_heatmap():
       aim = np.where(Ex == Ex.max())
       xc,yc = np.median(x[aim]),np.median(y[aim])
 
-      im = axi.imshow(Ex,cmap='inferno',origin='lower',extent=[x.min(),x.max(),y.min(),y.max()])
+      im = axi.imshow(Ex*3,cmap='inferno',origin='lower',extent=[x.min(),x.max(),y.min(),y.max()])
       axi.scatter(xc,yc,color='w',s=40,zorder=4)
       axi.scatter(xc,yc,color='r',s=20,zorder=5)
       axi.set_xticklabels([])
@@ -75,12 +89,18 @@ def plot_heatmap():
       axi.set_ylim([x.min()-buff,x.max()+buff])
 
       cbar = plt.colorbar(im,ax=axi)
-      cbar.set_label('Expected 1-dart score',fontsize=fsize-3)
+      cbar.set_label('Expected 3-dart score',fontsize=fsize-3)
 
       drawBoard(ax=axi,color_on=False,zorder=3)
 
     plt.tight_layout()
-    plt.show()
+    #plt.show()
+    if parent is not None:
+        canvas = FigureCanvasTkAgg(fig, master=frame)
+        #canvas.show()
+        canvas.get_tk_widget().place(x=5,y=5,width=590,height=490) 
+    else:
+        plt.show()
 
 def plot_heatmap_sigma(sigma,axi=None):
     if axi is None:
@@ -100,7 +120,7 @@ def plot_heatmap_sigma(sigma,axi=None):
     aim = np.where(Ex == Ex.max())
     xc,yc = np.median(x[aim]),np.median(y[aim])
 
-    im = axi.imshow(Ex,cmap='inferno',origin='lower',extent=[x.min(),x.max(),y.min(),y.max()])
+    im = axi.imshow(Ex*3,cmap='inferno',origin='lower',extent=[x.min(),x.max(),y.min(),y.max()])
     axi.scatter(xc,yc,color='w',s=40,zorder=4)
     axi.scatter(xc,yc,color='r',s=20,zorder=5)
     axi.set_xticklabels([])
@@ -110,7 +130,7 @@ def plot_heatmap_sigma(sigma,axi=None):
     axi.set_ylim([x.min()-buff,x.max()+buff])
 
     cbar = plt.colorbar(im,ax=axi)
-    cbar.set_label('Expected 1-dart score',fontsize=fsize-3)
+    cbar.set_label('Expected 3-dart score',fontsize=fsize-3)
 
     drawBoard(ax=axi,color_on=False,zorder=3)
 
